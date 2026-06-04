@@ -13,8 +13,7 @@ struct MarkdownWebView: NSViewRepresentable {
     func updateNSView(_ webView: WKWebView, context: Context) {
         guard context.coordinator.loadedHTML != html else { return }
         context.coordinator.loadedHTML = html
-        let baseURL = Bundle.module.resourceURL
-        webView.loadHTMLString(html, baseURL: baseURL)
+        webView.loadHTMLString(html, baseURL: nil)
     }
 
     func makeCoordinator() -> Coordinator {
