@@ -7,10 +7,10 @@ struct ContentView: View {
     var body: some View {
         Group {
             if viewModel.showPreview {
-                MarkdownWebView(html: viewModel.renderedHTML)
+                MarkdownWebView(html: viewModel.renderedHTML, fontSize: viewModel.fontSize)
             } else {
                 TextEditor(text: $document.text)
-                    .font(.system(.body, design: .monospaced))
+                    .font(.system(size: viewModel.fontSize, design: .monospaced))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -25,6 +25,22 @@ struct ContentView: View {
                     )
                 }
                 .help(viewModel.showPreview ? "切換回編輯模式" : "切換到預覽模式")
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button { viewModel.decreaseFontSize() } label: {
+                    Image(systemName: "textformat.size.smaller")
+                }
+                .help("縮小字型 (⌘-)")
+                .keyboardShortcut("-", modifiers: .command)
+                .disabled(viewModel.fontSize <= 10)
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Button { viewModel.increaseFontSize() } label: {
+                    Image(systemName: "textformat.size.larger")
+                }
+                .help("增大字型 (⌘=)")
+                .keyboardShortcut("=", modifiers: .command)
+                .disabled(viewModel.fontSize >= 32)
             }
         }
         .navigationTitle("")

@@ -3,6 +3,7 @@ import WebKit
 
 struct MarkdownWebView: NSViewRepresentable {
     let html: String
+    let fontSize: CGFloat
 
     func makeNSView(context: Context) -> WKWebView {
         let webView = WKWebView()
@@ -11,9 +12,14 @@ struct MarkdownWebView: NSViewRepresentable {
     }
 
     func updateNSView(_ webView: WKWebView, context: Context) {
-        guard context.coordinator.loadedHTML != html else { return }
-        context.coordinator.loadedHTML = html
-        webView.loadHTMLString(html, baseURL: nil)
+        if context.coordinator.loadedHTML != html {
+            context.coordinator.loadedHTML = html
+            context.coordinator.pendingFontSize = fontSize
+            webView.loadHTMLString(html, baseURL: nil)
+        } else if context.coordinator.appliedFontSize != fontSize {
+            context.coordinator.appliedFontSize = fontSize
+            webView.evaluateJavaScript("document.body.style.fontSize = '\(fontSize)px'")
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -23,11 +29,15 @@ struct MarkdownWebView: NSViewRepresentable {
     @MainActor
     final class Coordinator: NSObject, WKNavigationDelegate {
         var loadedHTML: String = ""
+        var pendingFontSize: CGFloat = 16
+        var appliedFontSize: CGFloat = 0
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             let isDark = NSApp.effectiveAppearance
                 .bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
             webView.evaluateJavaScript("setDarkMode(\(isDark))")
+            webView.evaluateJavaScript("document.body.style.fontSize = '\(pendingFontSize)px'")
+            appliedFontSize = pendingFontSize
         }
 
         func webView(
