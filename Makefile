@@ -35,6 +35,9 @@ bundle: build
 	fi
 	@test -f Info.plist || (echo "Error: Info.plist not found"; exit 1)
 	@cp Info.plist $(BUNDLE_NAME)/Contents/Info.plist
+	@if [ -f "$(RESOURCES)/AppIcon.icns" ]; then \
+		cp "$(RESOURCES)/AppIcon.icns" "$(BUNDLE_NAME)/Contents/Resources/AppIcon.icns"; \
+	fi
 	@echo "Bundled: $(BUNDLE_NAME)"
 
 open: bundle
