@@ -22,7 +22,7 @@ deps:
 		-o "$(RESOURCES)/highlight.min.css"
 	@echo "Done."
 
-build: $(RESOURCES)/marked.min.js
+build: $(RESOURCES)/marked.min.js $(RESOURCES)/highlight.min.js $(RESOURCES)/highlight.min.css
 	swift build -c release
 
 bundle: build
@@ -33,6 +33,7 @@ bundle: build
 	@if [ -d "$(SPM_BUNDLE)" ]; then \
 		cp -r "$(SPM_BUNDLE)" "$(BUNDLE_NAME)/Contents/Resources/"; \
 	fi
+	@test -f Info.plist || (echo "Error: Info.plist not found"; exit 1)
 	@cp Info.plist $(BUNDLE_NAME)/Contents/Info.plist
 	@echo "Bundled: $(BUNDLE_NAME)"
 
