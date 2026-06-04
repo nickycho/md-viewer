@@ -6,7 +6,14 @@ import Observation
 final class MarkdownViewModel {
     var showPreview: Bool = false
     var renderedHTML: String = ""
-    var fontSize: CGFloat = 16
+    var fontSize: CGFloat {
+        didSet { UserDefaults.standard.set(Double(fontSize), forKey: "fontSize") }
+    }
+
+    init() {
+        let saved = UserDefaults.standard.double(forKey: "fontSize")
+        fontSize = saved > 0 ? CGFloat(saved) : 16
+    }
 
     func togglePreview(with markdown: String) {
         if !showPreview {
