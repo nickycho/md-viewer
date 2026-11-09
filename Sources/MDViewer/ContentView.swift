@@ -2,7 +2,14 @@ import SwiftUI
 
 struct ContentView: View {
     @Binding var document: MarkdownDocument
-    @State private var viewModel = MarkdownViewModel()
+    @State private var viewModel: MarkdownViewModel
+
+    init(document: Binding<MarkdownDocument>) {
+        self._document = document
+        self._viewModel = State(
+            initialValue: MarkdownViewModel(initialMarkdown: document.wrappedValue.text)
+        )
+    }
 
     var body: some View {
         Group {

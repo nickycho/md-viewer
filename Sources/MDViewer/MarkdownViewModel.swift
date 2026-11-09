@@ -10,9 +10,14 @@ final class MarkdownViewModel {
         didSet { UserDefaults.standard.set(Double(fontSize), forKey: "fontSize") }
     }
 
-    init() {
+    init(initialMarkdown: String? = nil) {
         let saved = UserDefaults.standard.double(forKey: "fontSize")
         fontSize = saved > 0 ? CGFloat(saved) : 16
+
+        if let initialMarkdown {
+            renderedHTML = HTMLBuilder.build(initialMarkdown)
+            showPreview = true
+        }
     }
 
     func togglePreview(with markdown: String) {
