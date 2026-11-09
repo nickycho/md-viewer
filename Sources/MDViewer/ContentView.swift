@@ -4,6 +4,11 @@ import UniformTypeIdentifiers
 
 struct ContentView: View {
     @State private var viewModel = MarkdownViewModel()
+    @AppStorage("interfaceLanguage") private var languageRawValue = AppLanguage.system.rawValue
+
+    private var language: AppLanguage {
+        AppLanguage(rawValue: languageRawValue) ?? .system
+    }
 
     @State private var recentFiles: [RecentFile] = []
     @State private var searchText = ""
@@ -40,8 +45,8 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .mdViewerSaveAsDocument)) { _ in
             saveDocumentAs()
         }
-        .alert("檔案操作失敗", isPresented: $isErrorPresented) {
-            Button("好", role: .cancel) {}
+        .alert(language.text(.fileOperationFailed), isPresented: $isErrorPresented) {
+            Button(language.text(.ok), role: .cancel) {}
         } message: {
             Text(errorMessage)
         }
@@ -59,32 +64,39 @@ struct ContentView: View {
                 Button(action: chooseFile) {
                     Image(systemName: "folder.badge.plus")
                 }
-                .help("開啟檔案")
+                .help(language.text(.openFileHelp))
 
                 Button(action: refreshRecentFiles) {
                     Image(systemName: "arrow.clockwise")
                 }
-                .help("重新整理最近檔案")
+                .help(language.text(.refreshRecentFiles))
 
                 Button {
                     isSettingsPresented.toggle()
                 } label: {
                     Image(systemName: "gearshape")
                 }
-                .help("側邊欄設定")
+                .help(language.text(.sidebarSettings))
                 .popover(isPresented: $isSettingsPresented, arrowEdge: .bottom) {
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("最近檔案")
+                        Text(language.text(.recentFiles))
                             .font(.headline)
                         Stepper(value: $maximumRecentCount, in: 5...50, step: 5) {
-                            Text("最多顯示 \(maximumRecentCount) 個")
+                            Text(String(format: language.text(.maxRecentFilesFormat), maximumRecentCount))
                         }
-                        Text("此設定只影響側邊欄最近檔案清單。")
+                        Text(language.text(.recentFilesLimitNote))
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                        Divider()
+                        Picker(language.text(.language), selection: $languageRawValue) {
+                            ForEach(AppLanguage.allCases) { option in
+                                Text(option.displayName(in: language)).tag(option.rawValue)
+                            }
+                        }
+                        .pickerStyle(.menu)
                     }
                     .padding(16)
-                    .frame(width: 260)
+                    .frame(width: 300)
                     .onChange(of: maximumRecentCount) { _, count in
                         UserDefaults.standard.set(count, forKey: "sidebarMaximumRecentCount")
                         refreshRecentFiles()
@@ -96,16 +108,16 @@ struct ContentView: View {
                 } label: {
                     Image(systemName: "sidebar.left")
                 }
-                .help(columnVisibility == .all ? "隱藏側邊欄" : "顯示側邊欄")
+                .help(language.text(columnVisibility == .all ? .hideSidebar : .showSidebar))
             }
             .buttonStyle(.borderless)
 
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
-                TextField("搜尋最近檔案", text: $searchText)
+                TextField(language.text(.searchRecentFiles), text: $searchText)
                     .textFieldStyle(.plain)
-                    .accessibilityLabel("搜尋最近檔案")
+                    .accessibilityLabel(language.text(.searchRecentFiles))
                 if !searchText.isEmpty {
                     Button {
                         searchText = ""
@@ -114,7 +126,7 @@ struct ContentView: View {
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
-                    .help("清除搜尋")
+                    .help(language.text(.clearSearch))
                 }
             }
             .padding(.horizontal, 10)
@@ -122,13 +134,13 @@ struct ContentView: View {
             .background(.quaternary, in: RoundedRectangle(cornerRadius: 9))
 
             Button(action: chooseFile) {
-                Label("開啟檔案…", systemImage: "doc.badge.plus")
+                Label(language.text(.openFile), systemImage: "doc.badge.plus")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
 
-            Text("最近檔案")
+            Text(language.text(.recentFiles))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.top, 4)
@@ -177,11 +189,11 @@ struct ContentView: View {
                         Image(systemName: recentFiles.isEmpty ? "doc.text" : "magnifyingglass")
                             .font(.title2)
                             .foregroundStyle(.tertiary)
-                        Text(recentFiles.isEmpty ? "尚無最近檔案" : "找不到符合的檔案")
+                        Text(language.text(recentFiles.isEmpty ? .noRecentFiles : .noMatchingFiles))
                             .font(.callout)
                             .foregroundStyle(.secondary)
                         if recentFiles.isEmpty {
-                            Text("開啟檔案後會列在這裡。")
+                            Text(language.text(.openFileHint))
                                 .font(.caption)
                                 .foregroundStyle(.tertiary)
                         }
@@ -213,7 +225,7 @@ struct ContentView: View {
                 } label: {
                     Image(systemName: "sidebar.left")
                 }
-                .help(columnVisibility == .all ? "隱藏側邊欄" : "顯示側邊欄")
+                .help(language.text(columnVisibility == .all ? .hideSidebar : .showSidebar))
             }
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -221,7 +233,7 @@ struct ContentView: View {
                 } label: {
                     Image(systemName: "square.and.arrow.down")
                 }
-                .help("儲存 (⌘S)")
+                .help(language.text(.saveShortcut))
                 .disabled(!viewModel.isEdited)
             }
             ToolbarItem(placement: .primaryAction) {
@@ -229,17 +241,17 @@ struct ContentView: View {
                     viewModel.togglePreview(with: viewModel.markdownText)
                 } label: {
                     Label(
-                        viewModel.showPreview ? "編輯" : "預覽",
+                        language.text(viewModel.showPreview ? .edit : .preview),
                         systemImage: viewModel.showPreview ? "pencil" : "eye"
                     )
                 }
-                .help(viewModel.showPreview ? "切換回編輯模式" : "切換到預覽模式")
+                .help(language.text(viewModel.showPreview ? .switchToEdit : .switchToPreview))
             }
             ToolbarItem(placement: .primaryAction) {
                 Button { viewModel.decreaseFontSize() } label: {
                     Image(systemName: "textformat.size.smaller")
                 }
-                .help("縮小字型 (⌘-)")
+                .help(language.text(.decreaseFontSize))
                 .keyboardShortcut("-", modifiers: .command)
                 .disabled(viewModel.fontSize <= 10)
             }
@@ -247,12 +259,12 @@ struct ContentView: View {
                 Button { viewModel.increaseFontSize() } label: {
                     Image(systemName: "textformat.size.larger")
                 }
-                .help("增大字型 (⌘=)")
+                .help(language.text(.increaseFontSize))
                 .keyboardShortcut("=", modifiers: .command)
                 .disabled(viewModel.fontSize >= 32)
             }
         }
-        .navigationTitle(viewModel.fileURL?.lastPathComponent ?? "未命名文件")
+        .navigationTitle(viewModel.fileURL?.lastPathComponent ?? language.text(.untitledDocument))
     }
 
     private var filteredFiles: [RecentFile] {
@@ -280,7 +292,7 @@ struct ContentView: View {
                 FileManager.default.fileExists(atPath: url.path)
             }
             .prefix(maximumRecentCount)
-            .map(RecentFile.init(url:))
+            .map { RecentFile(url: $0, language: language) }
     }
 
     private func chooseFile() {
@@ -288,7 +300,7 @@ struct ContentView: View {
         panel.allowedContentTypes = [.markdownText, .plainText]
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
-        panel.prompt = "開啟"
+        panel.prompt = language.text(.openPrompt)
 
         panel.begin { response in
             guard response == .OK, let url = panel.url else { return }
@@ -324,11 +336,11 @@ struct ContentView: View {
         guard viewModel.isEdited else { return true }
 
         let alert = NSAlert()
-        alert.messageText = "尚有未儲存的變更"
-        alert.informativeText = "切換文件前要先儲存目前的內容嗎？"
-        alert.addButton(withTitle: "儲存")
-        alert.addButton(withTitle: "不儲存")
-        alert.addButton(withTitle: "取消")
+        alert.messageText = language.text(.unsavedChangesTitle)
+        alert.informativeText = language.text(.unsavedChangesMessage)
+        alert.addButton(withTitle: language.text(.save))
+        alert.addButton(withTitle: language.text(.discard))
+        alert.addButton(withTitle: language.text(.cancel))
 
         switch alert.runModal() {
         case .alertFirstButtonReturn:
@@ -352,8 +364,8 @@ struct ContentView: View {
     private func saveDocumentAs() -> Bool {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.markdownText]
-        panel.nameFieldStringValue = viewModel.fileURL?.lastPathComponent ?? "Untitled.md"
-        panel.prompt = "儲存"
+        panel.nameFieldStringValue = viewModel.fileURL?.lastPathComponent ?? language.text(.untitledFileName)
+        panel.prompt = language.text(.savePrompt)
 
         guard panel.runModal() == .OK, let url = panel.url else { return false }
         return writeDocument(to: url)
@@ -379,6 +391,7 @@ struct ContentView: View {
 
     private struct RecentFile: Identifiable {
         let url: URL
+        let language: AppLanguage
 
         var id: String { url.standardizedFileURL.path }
         var name: String { url.lastPathComponent }
@@ -393,10 +406,20 @@ struct ContentView: View {
 
         var details: String {
             let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
-            let date = values?.contentModificationDate?.formatted(.relative(presentation: .named)) ?? "時間未知"
+            let date = values?.contentModificationDate?.formatted(
+                .relative(presentation: .named).locale(language.locale)
+            ) ?? language.text(.unknownTime)
             let size = values?.fileSize.map {
-                ByteCountFormatter.string(fromByteCount: Int64($0), countStyle: .file)
-            } ?? "大小未知"
+                let formatter = MeasurementFormatter()
+                formatter.locale = language.locale
+                formatter.unitStyle = .short
+                formatter.unitOptions = .naturalScale
+                let measurement = Measurement(
+                    value: Double($0),
+                    unit: UnitInformationStorage.bytes
+                )
+                return formatter.string(from: measurement)
+            } ?? language.text(.unknownSize)
             return "\(date) · \(size)"
         }
     }

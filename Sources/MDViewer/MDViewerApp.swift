@@ -4,6 +4,11 @@ import SwiftUI
 @main
 struct MDViewerApp: App {
     @NSApplicationDelegateAdaptor(MDViewerAppDelegate.self) private var appDelegate
+    @AppStorage("interfaceLanguage") private var languageRawValue = AppLanguage.system.rawValue
+
+    private var language: AppLanguage {
+        AppLanguage(rawValue: languageRawValue) ?? .system
+    }
 
     var body: some Scene {
         Window(".md Viewer", id: "main") {
@@ -12,23 +17,23 @@ struct MDViewerApp: App {
         .defaultSize(width: 960, height: 680)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("新增文件") {
+                Button(language.text(.newDocument)) {
                     NotificationCenter.default.post(name: .mdViewerNewDocument, object: nil)
                 }
                 .keyboardShortcut("n", modifiers: .command)
             }
             CommandGroup(after: .newItem) {
-                Button("開啟檔案…") {
+                Button(language.text(.openMenu)) {
                     NotificationCenter.default.post(name: .mdViewerChooseDocument, object: nil)
                 }
                 .keyboardShortcut("o", modifiers: .command)
             }
             CommandGroup(replacing: .saveItem) {
-                Button("儲存") {
+                Button(language.text(.save)) {
                     NotificationCenter.default.post(name: .mdViewerSaveDocument, object: nil)
                 }
                 .keyboardShortcut("s", modifiers: .command)
-                Button("另存新檔…") {
+                Button(language.text(.saveAs)) {
                     NotificationCenter.default.post(name: .mdViewerSaveAsDocument, object: nil)
                 }
                 .keyboardShortcut("S", modifiers: [.command, .shift])
